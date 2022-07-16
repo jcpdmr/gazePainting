@@ -5,10 +5,12 @@ import numpy as np
 import cv2 as cv2
 import time
 
+# pip install --extra-index-url https://download.pytorch.org/whl/cu113/ "torch==1.11.0+cu113"
 import torch
 import torch.nn as nn
 from sqlalchemy.orm import sessionmaker
 from torch.autograd import Variable
+
 from torchvision import transforms
 import torch.backends.cudnn as cudnn
 
@@ -20,6 +22,7 @@ from other_files.utils import select_device, draw_gaze, get_age_predictions, get
 
 from PIL import Image
 
+# pip install git+https://github.com/elliottzheng/face-detection.git@master
 from face_detection import RetinaFace
 
 import db
