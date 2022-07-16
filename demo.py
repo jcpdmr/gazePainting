@@ -20,7 +20,7 @@ from other_files.utils import select_device, draw_gaze, get_age_predictions, get
 
 from PIL import Image
 
-from retinaface import RetinaFace
+from face_detection import RetinaFace
 
 import db
 
