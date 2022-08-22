@@ -6,6 +6,7 @@ import cv2 as cv2
 import time
 
 # pip install --extra-index-url https://download.pytorch.org/whl/cu113/ "torch==1.11.0+cu113"
+# pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 import torch
 import torch.nn as nn
 from sqlalchemy.orm import sessionmaker
