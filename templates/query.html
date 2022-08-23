@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Query{% endblock %}
+{% block content %}
+    <h5>Complete the form and submit your query</h5>
+    <form action="#" method="post">
+        <p>Select a painting in the database:</p>
+        <select name="painting" onfocus="this.selectedIndex = -1;">
+            {% for painting in paintings %}
+                <option value="{{ painting }}">{{ painting }}</option>
+            {% endfor %}
+        </select>
+
+        <p>Select gender:</p>
+        <select name="gender" onfocus="this.selectedIndex = -1;">
+            <option value="all">All</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+        </select>
+        <p>Select gender accuracy:</p>
+        <select name="gender_accuracy" onfocus="this.selectedIndex = -1;">
+            <option value="all">All</option>
+            <option value="90%">at least 90%</option>
+        </select>
+
+        <p>Select age:</p>
+        <select name="age" onfocus="this.selectedIndex = -1;">
+            <option value="0">All</option>
+            <option value="1">(0, 2)</option>
+            <option value="2">(4, 6)</option>
+            <option value="3">(8, 12)</option>
+            <option value="4">(15, 20)</option>
+            <option value="5">(25, 32)</option>
+            <option value="6">(38, 43)</option>
+            <option value="7">(48, 53)</option>
+            <option value="8">(60, 100)</option>
+        </select>
+        <p>Select age accuracy:</p>
+        <select name="age_accuracy" onfocus="this.selectedIndex = -1;">
+            <option value="all">All</option>
+            <option value="90%">at least 90%</option>
+            <option value="75%">at least 75%</option>
+        </select>
+
+        <p><input type="submit" value="Submit"/></p>
+    </form>
+
+{% endblock %}
