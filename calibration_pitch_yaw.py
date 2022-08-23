@@ -1,3 +1,6 @@
+# example of parameters
+# --snapshot models/L2CSnet_gaze360.pkl --gpu 0 --cam 0 --calib_painting_path C:\TesiGithub\calibration\primavera
+
 import argparse
 import os
 
