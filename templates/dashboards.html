@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Dashboards{% endblock %}
+{% block content %}
+<div style="padding:35px">
+<!--First graph comparing total seconds-->
+<canvas id="totalSecondsChart" aria-label="total seconds chart" role="img"></canvas>
+</div>
+<script>
+    // The IDE is probably showing some errors in these next lines, because inside the JSON.parse method there are
+    // some templates with curly brackets. Don't worry the code works.
+    let painting_names =JSON.parse({{ painting_names | tojson }})
+    let total_seconds_male =JSON.parse({{ total_seconds_male | tojson }})
+    let total_seconds_female =JSON.parse({{ total_seconds_female | tojson }})
+    let total_seconds =JSON.parse({{ total_seconds | tojson }})
+
+    // setup
+    const dataTotalSeconds = {
+        labels: painting_names,
+        datasets: [{
+            label: 'Total',
+            data: total_seconds,
+            backgroundColor: 'rgba(69,178,25,0.3)',
+            borderColor: 'rgba(69,178,25,1)',
+            borderWidth: 1
+            },
+            {
+                label: 'Male',
+                data: total_seconds_male,
+                backgroundColor: 'rgb(97,173,224, 0.3)',
+                borderColor: 'rgb(97,173,224, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Female',
+                data: total_seconds_female,
+                backgroundColor: 'rgba(245,117,157,0.3)',
+                borderColor: 'rgba(245,117,157,1)',
+                borderWidth: 1
+            }]
+    };
+
+    // config
+    const configTotalSeconds = {
+        type: 'bar',
+        data: dataTotalSeconds,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        font: {
+                            size: 14,
+                            family: 'Arial'
+                        },
+                        text: 'Seconds watching artwork'
+                    }
+                }
+            }
+        }
+    };
+
+    // render init block
+    const totalSecondsChart = new Chart(
+        document.getElementById('totalSecondsChart'),
+        configTotalSeconds
+    );
+</script>
+
+<div style="padding:35px">
+<!--Second graph comparing single interactions-->
+<canvas id="singleInteractionsChart" aria-label="single interactions chart" role="img"></canvas>
+</div>
+<script>
+    // The IDE is probably showing some errors in these next lines, because inside the JSON.parse method there are
+    // some templates with curly brackets. Don't worry the code works.
+    let single_interactions_male =JSON.parse({{ single_interactions_male | tojson }})
+    let single_interactions_female =JSON.parse({{ single_interactions_female | tojson }})
+    let single_interactions_total =JSON.parse({{ single_interactions_total | tojson }})
+    // setup
+    const dataSingleInteractionsChart = {
+        labels: painting_names,
+        datasets: [{
+            label: 'Total',
+            data: single_interactions_total,
+            backgroundColor: 'rgba(255,217,48,0.3)',
+            borderColor: 'rgba(255,217,48,1)',
+            borderWidth: 1
+        },
+            {
+                label: 'Male',
+                data: single_interactions_male,
+                backgroundColor: 'rgb(97,173,224, 0.3)',
+                borderColor: 'rgb(97,173,224, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Total Female',
+                data: single_interactions_female,
+                backgroundColor: 'rgba(245,117,157,0.3)',
+                borderColor: 'rgba(245,117,157,1)',
+                borderWidth: 1
+            }]
+    };
+
+    // config
+    const configSingleInteractions = {
+        type: 'bar',
+        data: dataSingleInteractionsChart,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        font: {
+                            size: 14,
+                            family: 'Arial'
+                        },
+                        text: 'Single interactions'
+                    }
+                }
+            }
+        }
+    };
+
+    // render init block
+    const singleInteractionsChart = new Chart(document.getElementById('singleInteractionsChart'),
+        configSingleInteractions
+    );
+</script>
+
+<div style="padding:35px">
+<!--Third graph comparing age intervals interactions-->
+<canvas id="ageIntervalsChart" aria-label="age intervals chart" role="img"></canvas>
+</div>
+<script>
+    // The IDE is probably showing some errors in these next lines, because inside the JSON.parse method there are
+    // some templates with curly brackets. Don't worry the code works.
+    let age_interval_0_array_total =JSON.parse({{ age_interval_0_array_total | tojson }})
+    let age_interval_1_array_total =JSON.parse({{ age_interval_1_array_total | tojson }})
+    let age_interval_2_array_total =JSON.parse({{ age_interval_2_array_total | tojson }})
+    let age_interval_3_array_total =JSON.parse({{ age_interval_3_array_total | tojson }})
+    let age_interval_4_array_total =JSON.parse({{ age_interval_4_array_total | tojson }})
+    let age_interval_5_array_total =JSON.parse({{ age_interval_5_array_total | tojson }})
+    let age_interval_6_array_total =JSON.parse({{ age_interval_6_array_total | tojson }})
+    let age_interval_7_array_total =JSON.parse({{ age_interval_7_array_total | tojson }})
+    // setup
+    const dataAgeIntervalsChart = {
+        labels: painting_names,
+        datasets: [{
+            label: 'Age interval (0,2)',
+            data: age_interval_0_array_total,
+            backgroundColor: 'rgba(50,231,45,0.3)',
+            borderColor: 'rgba(50,231,45,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (4,6)',
+            data: age_interval_1_array_total,
+            backgroundColor: 'rgba(21,81,122,0.3)',
+            borderColor: 'rgba(21,81,122,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (8,12)',
+            data: age_interval_2_array_total,
+            backgroundColor: 'rgba(187,22,56,0.3)',
+            borderColor: 'rgba(187,22,56,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (15,20)',
+            data: age_interval_3_array_total,
+            backgroundColor: 'rgb(136,186,238,0.3)',
+            borderColor: 'rgb(136,186,238,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (25,32)',
+            data: age_interval_4_array_total,
+            backgroundColor: 'rgba(31,171,22,0.3)',
+            borderColor: 'rgba(31,171,22,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (38,43)',
+            data: age_interval_5_array_total,
+            backgroundColor: 'rgba(43,76,204,0.3)',
+            borderColor: 'rgba(43,76,204,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (48,53)',
+            data: age_interval_6_array_total,
+            backgroundColor: 'rgba(214,224,118,0.3)',
+            borderColor: 'rgba(214,224,118,1)',
+            borderWidth: 1
+            },
+            {
+            label: 'Age interval (60,100)',
+            data: age_interval_7_array_total,
+            backgroundColor: 'rgba(211,90,236,0.3)',
+            borderColor: 'rgba(211,90,236,1)',
+            borderWidth: 1
+            }
+        ]
+    };
+
+    // config
+    const configAgeIntervals = {
+        type: 'bar',
+        data: dataAgeIntervalsChart,
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        font: {
+                            size: 14,
+                            family: 'Arial'
+                        },
+                        text: 'Single interactions'
+                    }
+                }
+            }
+        }
+    };
+
+    // render init block
+    const ageIntervalsChart = new Chart(document.getElementById('ageIntervalsChart'),
+        configAgeIntervals
+    );
+</script>
+
+{% endblock %}

@@ -1,5 +1,7 @@
 from flask import Flask, redirect, url_for, render_template, request, session, flash
 from flask_sqlalchemy import SQLAlchemy
+import json
+from other_files.utils import getInfoPerPainting, getPaintingNames
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database/history.sqlite3"
@@ -7,18 +9,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config['SECRET_KEY'] = "UnifiTesiIngETL"
 db = SQLAlchemy(app)
 history = db.Table("history", db.metadata, autoload=True, autoload_with=db.engine)
-result = db.session.query(history).all()
 
-PAINTING_NAME_COLUMN = 1
-paintings = []
-paintings_names = ""
-for i in range(len(result)):
-    painting_name = result[i][PAINTING_NAME_COLUMN]
-    if painting_name not in paintings:
-        paintings_names += painting_name + ", "
-        paintings.append(painting_name)
-paintings_names = paintings_names.strip()
-paintings_names = paintings_names[:-1]
+result = db.session.query(history).all()
 
 
 @app.route("/")
@@ -26,28 +18,29 @@ def home():
     return render_template("home.html")
 
 
-@app.route("/query", methods=["POST", "GET"])
-def query():
-    if request.method == "POST":
-        session["requested_painting"] = request.form["painting"]
-        session["requested_gender"] = request.form["gender"]
-        session["requested_gender_accuracy"] = request.form["gender_accuracy"]
-        session["requested_age"] = request.form["age"]
-        session["requested_age_accuracy"] = request.form["age_accuracy"]
-        # code 307 is used to redirect maintaining the same POST/GET method
-        return redirect(url_for("query_result"), code=307)
-    else:
-        return render_template("query.html", paintings=paintings)
-
-
-@app.route("/query_result", methods=["POST", "GET"])
-def query_result():
-    if request.method == "POST":
-        content = session.get("requested_painting")
-        return render_template("query_result.html")  # TODO: content non viene mostrato da query_result.html
-    else:
-        return redirect(url_for("query"))
-
+@app.route("/dashboards")
+def dashboards():
+    painting_names = getPaintingNames(result)
+    total_seconds_male, total_seconds_female, total_seconds, single_interactions_male, \
+    single_interactions_female, single_interactions_total, age_interval_0_array_total,\
+        age_interval_1_array_total, age_interval_2_array_total, age_interval_3_array_total,\
+        age_interval_4_array_total, age_interval_5_array_total, age_interval_6_array_total, \
+        age_interval_7_array_total = getInfoPerPainting(result)
+    return render_template("dashboards.html", painting_names=json.dumps(painting_names),
+                           total_seconds_male=json.dumps(total_seconds_male),
+                           total_seconds_female=json.dumps(total_seconds_female),
+                           total_seconds=json.dumps(total_seconds),
+                           single_interactions_male=json.dumps(single_interactions_male),
+                           single_interactions_female=json.dumps(single_interactions_female),
+                           single_interactions_total=json.dumps(single_interactions_total),
+                           age_interval_0_array_total=json.dumps(age_interval_0_array_total),
+                           age_interval_1_array_total=json.dumps(age_interval_1_array_total),
+                           age_interval_2_array_total=json.dumps(age_interval_2_array_total),
+                           age_interval_3_array_total=json.dumps(age_interval_3_array_total),
+                           age_interval_4_array_total=json.dumps(age_interval_4_array_total),
+                           age_interval_5_array_total=json.dumps(age_interval_5_array_total),
+                           age_interval_6_array_total=json.dumps(age_interval_6_array_total),
+                           age_interval_7_array_total=json.dumps(age_interval_7_array_total))
 
 @app.route("/about")
 def about():
