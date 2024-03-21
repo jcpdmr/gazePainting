@@ -1,6 +1,3 @@
-# example of parameters
-# --snapshot models/L2CSnet_gaze360.pkl --gpu 0 --cam 0 --calib_painting_path C:\TesiGithub\calibration\primavera
-
 import argparse
 import os
 
@@ -14,17 +11,16 @@ from torchvision import transforms
 import torch.backends.cudnn as cudnn
 import torchvision
 
-from utils import select_device, get_faces, image_resize
+from helpers_files.utils import select_device, get_faces, image_resize, L2CS
 from PIL import Image
 
 from face_detection import RetinaFace
-from model import L2CS
 
 yaw_calibration = []
 pitch_calibration = []
 
 
-def parse_args():
+def calibration_parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(
         description='Gaze evalution using model pretrained with L2CS-Net on Gaze360.')
@@ -33,7 +29,7 @@ def parse_args():
         default="0", type=str)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path of model snapshot.',
-        default='output/snapshots/L2CS-gaze360-_loader-180-4/_epoch_55.pkl', type=str)
+        default='weights/L2CSNet_gaze360.pkl', type=str)
     parser.add_argument(
         '--cam', dest='cam_id', help='Camera device id to use [0]',
         default=0, type=int)
@@ -42,7 +38,7 @@ def parse_args():
         default='ResNet50', type=str)
 
     parser.add_argument('--calib_painting_path', dest='cal_painting_path', help='Path of the folder of '
-                        'painting calibration [Example: C:/.../calibration/venere]', type=str)
+                        'painting calibration [Example: C:/.../calibration/venere]', default='calibration/paintingA', type=str)
 
     args = parser.parse_args()
     return args
@@ -67,7 +63,7 @@ def getArch(arch, bins):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    args = calibration_parse_args()
 
     cudnn.enabled = True
     arch = args.arch
@@ -174,7 +170,7 @@ if __name__ == '__main__':
 
         # Write the calibration settings in the calibration.txt file
         with open(os.path.join(cal_painting_path, "calibration.txt"), "w") as f:
-            print(f"Writing the calibration settings in the {cal_painting_path}\\calibration.txt file : \n"
+            print(f"Writing the calibration settings in the {cal_painting_path}/calibration.txt file : \n"
                   f"PITCH_MAX = {pitch_max:.2f}; PITCH_MIN = {pitch_min:.2f}; YAW_MAX = {yaw_max:.2f}; "
                   f"YAW_MIN = {yaw_min:.2f};")
             f.write(f"{pitch_max:.2f}" + "\n")

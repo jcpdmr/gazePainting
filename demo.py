@@ -1,6 +1,5 @@
 # example of parameters
-# --snapshot models/L2CSnet_gaze360.pkl --gpu 0 --cam 0
-# --calib_painting_path C:\TesiGithub\calibration\primavera --painting_name "Venere"
+# --snapshot weights/L2CSNet_gaze360.pkl --gpu 0 --cam 0 --calib_painting_path calibration/paintingA --painting_name paintingA
 
 
 from datetime import datetime
@@ -14,15 +13,14 @@ import time
 # pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113
 import torch
 import torch.nn as nn
-from sqlalchemy.orm import sessionmaker
 from torch.autograd import Variable
 
 from torchvision import transforms
 import torch.backends.cudnn as cudnn
 
-from other_files import tracker_utils
+from helpers_files import tracker_utils
 
-from other_files.utils import select_device, draw_gaze, get_age_predictions, get_gender_predictions, getArch, parse_args, \
+from helpers_files.utils import select_device, draw_gaze, get_age_predictions, get_gender_predictions, getArch, parse_args, \
     GENDER_LIST, AGE_INTERVALS
 
 
@@ -31,7 +29,7 @@ from PIL import Image
 # pip install git+https://github.com/elliottzheng/face-detection.git@master
 from face_detection import RetinaFace
 
-import db
+import sqlite3
 
 # Count the cycle of the program
 counter = 0
@@ -56,10 +54,25 @@ MAX_PITCH, MIN_PITCH, MAX_YAW, MIN_YAW = 30, -30, 30, -30
 
 past_active_ids = []
 
-Session = sessionmaker(bind=db.engine)
-session = Session()
+# Create database if it doesn't exist
+conn = sqlite3.connect('database/history.db')
+
+# Create cursor to execute queries
+cur = conn.cursor()
+
+# Create table 'history'
+cur.execute('''CREATE TABLE IF NOT EXISTS history (
+                datetime TEXT PRIMARY KEY,
+                painting_name TEXT,
+                seconds REAL,
+                gender TEXT,
+                gender_score INTEGER,
+                age TEXT,
+                age_score INTEGER
+            )''')
 
 if __name__ == '__main__':
+    print("Parsing input args...")
     args = parse_args()
     cudnn.enabled = True
     arch = args.arch
@@ -147,7 +160,8 @@ if __name__ == '__main__':
                     bbox_height = y_max - y_min
 
                     # Append the faces in the list
-                    detected_faces.append([x_min, y_min, bbox_width, bbox_height])
+                    detected_faces.append(
+                        [x_min, y_min, bbox_width, bbox_height])
 
             # Update the boxes adding a new value that is the id
             boxes_ids = tracker.update(detected_faces)
@@ -161,7 +175,8 @@ if __name__ == '__main__':
 
                 # Crop image and make a original copy that will be used in Age-Gender estimation
                 img = frame[y_min:y_max, x_min:x_max]
-                img_copy = cv2.resize(img, (int(box_id[2] * 1.5), int(box_id[3] * 1.5)), interpolation=cv2.INTER_AREA)
+                img_copy = cv2.resize(
+                    img, (int(box_id[2] * 1.5), int(box_id[3] * 1.5)), interpolation=cv2.INTER_AREA)
                 img = cv2.resize(img, (224, 224))
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 im_pil = Image.fromarray(img)
@@ -176,8 +191,10 @@ if __name__ == '__main__':
                 yaw_predicted = softmax(gaze_yaw)
 
                 # Get continuous predictions in degrees.
-                pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 4 - 180
-                yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 4 - 180
+                pitch_predicted = torch.sum(
+                    pitch_predicted.data[0] * idx_tensor) * 4 - 180
+                yaw_predicted = torch.sum(
+                    yaw_predicted.data[0] * idx_tensor) * 4 - 180
 
                 pitch_predicted = pitch_predicted.cpu().detach().numpy() * np.pi / 180.0
                 yaw_predicted = yaw_predicted.cpu().detach().numpy() * np.pi / 180.0
@@ -208,7 +225,8 @@ if __name__ == '__main__':
 
                 # Checking if the current face is watching a precise zone and add the time
                 if MIN_PITCH <= pitch_predicted_degree <= MAX_PITCH and MIN_YAW <= yaw_predicted_degree <= MAX_YAW:
-                    times_array[id_num] = times_array[id_num] + (time.time() - start_time)
+                    times_array[id_num] = times_array[id_num] + \
+                        (time.time() - start_time)
 
                 # Drawing part
                 output_frame = frame
@@ -241,15 +259,18 @@ if __name__ == '__main__':
                     yPos = y_min - 15
                     while yPos < 15:
                         yPos -= 15
-                    box_color = (255, 0, 0) if gender == "Male" else (147, 20, 255)
-                    cv2.rectangle(output_frame, (x_min, y_min), (x_max, y_max), box_color, 1)
+                    box_color = (255, 0, 0) if gender == "Male" else (
+                        147, 20, 255)
+                    cv2.rectangle(output_frame, (x_min, y_min),
+                                  (x_max, y_max), box_color, 1)
                     # Label processed image
                     cv2.putText(output_frame, age_gender_label, (x_min, yPos), cv2.FONT_HERSHEY_SIMPLEX, 0.54,
                                 box_color,
                                 2)
                 else:
                     # Drawing bounding box
-                    cv2.rectangle(output_frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 1)
+                    cv2.rectangle(output_frame, (x_min, y_min),
+                                  (x_max, y_max), (0, 255, 0), 1)
 
                 # Drawing watch time
                 time_label = f"time: {times_array[id_num]:.1f}"
@@ -278,7 +299,8 @@ if __name__ == '__main__':
                 break
 
             # Let's find out the tracker ids that we've lost the tracking
-            lost_tracking_ids = list(set(past_active_ids).difference(active_ids))
+            lost_tracking_ids = list(
+                set(past_active_ids).difference(active_ids))
             for lost_id in lost_tracking_ids:
                 # Check if the id has watched the zone for more than 4 seconds and save the infos
                 if times_array[lost_id] > 4:
@@ -286,15 +308,17 @@ if __name__ == '__main__':
                                  f"the gender is {gender_array[lost_id]} (probability: {gender_score_array[lost_id]:1f});  " \
                                  f"the age is {age_array[lost_id]} (probability: {age_score_array[lost_id]:1f})"
                     print(lost_label)
-                    # Add data to our table in database [remember to commit the changes]
-                    data = db.history(datetime.utcnow(), painting_name, round(times_array[lost_id], 1),
-                                      gender_array[lost_id], int(gender_score_array[lost_id] * 100),
-                                      str(age_array[lost_id]), int(age_score_array[lost_id] * 100))
-                    session.add(data)
+                    # Prepare data data to insert
+                    data = (datetime.now(), painting_name, round(times_array[lost_id], 1),
+                            gender_array[lost_id], int(
+                                gender_score_array[lost_id] * 100),
+                            str(age_array[lost_id]), int(age_score_array[lost_id] * 100))
+                    cur.execute(
+                        '''INSERT INTO history (datetime, painting_name, seconds, gender, gender_score, age, age_score) VALUES (?, ?, ?, ?, ?, ?, ?)''', data)
             # Update the past active ids with the ones founded in this cycle
             past_active_ids = active_ids
         # Before exiting the program we commit the changes made in the current session in the database
         print("Committing changes in the database")
-        session.commit()
+        conn.commit()
         cap.release()
         cv2.destroyAllWindows()

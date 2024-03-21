@@ -12,7 +12,7 @@ from math import cos, sin
 from pathlib import Path
 import subprocess
 import re
-from other_files.model import L2CS
+from helpers_files.model import L2CS
 import torchvision
 import sys
 
@@ -24,7 +24,8 @@ FACE_PROTO = "weights/deploy.prototxt.txt"
 FACE_MODEL = "weights/res10_300x300_ssd_iter_140000_fp16.caffemodel"
 AGE_MODEL = 'weights/deploy_age.prototxt'
 AGE_PROTO = 'weights/age_net.caffemodel'
-AGE_INTERVALS = ['(0, 2)', '(4, 6)', '(8, 12)', '(15, 20)', '(25, 32)', '(38, 43)', '(48, 53)', '(60, 100)']
+AGE_INTERVALS = ['(0, 2)', '(4, 6)', '(8, 12)', '(15, 20)',
+                 '(25, 32)', '(38, 43)', '(48, 53)', '(60, 100)']
 frame_width = 1280
 frame_height = 720
 face_net = cv2.dnn.readNetFromCaffe(FACE_PROTO, FACE_MODEL)
@@ -77,7 +78,8 @@ def draw_gaze(a, b, c, d, image_in, pitchyaw, thickness=2, color=(255, 255, 0), 
     dx = -length * np.sin(pitchyaw[0]) * np.cos(pitchyaw[1])
     dy = -length * np.sin(pitchyaw[1])
     cv2.arrowedLine(image_out, tuple(np.round(pos).astype(np.int32)),
-                    tuple(np.round([pos[0] + dx, pos[1] + dy]).astype(int)), color,
+                    tuple(np.round([pos[0] + dx, pos[1] + dy]
+                                   ).astype(int)), color,
                     thickness, cv2.LINE_AA, tipLength=0.18)
     return image_out
 
@@ -89,21 +91,25 @@ def select_device(device='', batch_size=None):
     s = f'YOLOv3 🚀 {git_describe()} torch {torch.__version__} '  # string
     cpu = device.lower() == 'cpu'
     if cpu:
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force torch.cuda.is_available() = False
+        # force torch.cuda.is_available() = False
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     elif device:  # non-cpu device requested
         os.environ['CUDA_VISIBLE_DEVICES'] = device  # set environment variable
-        assert torch.cuda.is_available(), f'CUDA unavailable, invalid device {device} requested'  # check availability
+        assert torch.cuda.is_available(
+        ), f'CUDA unavailable, invalid device {device} requested'  # check availability
 
     cuda = not cpu and torch.cuda.is_available()
     if cuda:
-        devices = device.split(',') if device else range(torch.cuda.device_count())  # i.e. 0,1,6,7
+        devices = device.split(',') if device else range(
+            torch.cuda.device_count())  # i.e. 0,1,6,7
         n = len(devices)  # device count
         if n > 1 and batch_size:  # check batch_size is divisible by device_count
             assert batch_size % n == 0, f'batch-size {batch_size} not multiple of GPU count {n}'
         space = ' ' * len(s)
         for i, d in enumerate(devices):
             p = torch.cuda.get_device_properties(i)
-            s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / 1024 ** 2}MB)\n"  # bytes to MB
+            # bytes to MB
+            s += f"{'' if i == 0 else space}CUDA:{d} ({p.name}, {p.total_memory / 1024 ** 2}MB)\n"
     else:
         s += 'CPU\n'
 
@@ -135,7 +141,8 @@ def compute_angular_error(input, target):
 
 def softmax_temperature(tensor, temperature):
     result = torch.exp(tensor / temperature)
-    result = torch.div(result, torch.sum(result, 1).unsqueeze(1).expand_as(result))
+    result = torch.div(result, torch.sum(
+        result, 1).unsqueeze(1).expand_as(result))
     return result
 
 
@@ -162,13 +169,13 @@ def get_faces(frame, confidence_threshold=0.5):
         confidence = output[i, 2]
         if confidence > confidence_threshold:
             box = output[i, 3:7] * \
-                  np.array([frame.shape[1], frame.shape[0],
-                            frame.shape[1], frame.shape[0]])
+                np.array([frame.shape[1], frame.shape[0],
+                          frame.shape[1], frame.shape[0]])
             # convert to integers
             start_x, start_y, end_x, end_y = box.astype(np.int)
             # widen the box a little
             start_x, start_y, end_x, end_y = start_x - \
-                                             10, start_y - 10, end_x + 10, end_y + 10
+                10, start_y - 10, end_x + 10, end_y + 10
             start_x = 0 if start_x < 0 else start_x
             start_y = 0 if start_y < 0 else start_y
             end_x = 0 if end_x < 0 else end_x
@@ -246,23 +253,22 @@ def parse_args():
         description='Gaze evalution using model pretrained with L2CS-Net on Gaze360.')
     parser.add_argument(
         '--gpu', dest='gpu_id', help='GPU device id to use [0]',
-        default="0", type=str, required=True)
+        default="0", type=str)
     parser.add_argument(
         '--snapshot', dest='snapshot', help='Path of model snapshot.',
-        default='output/snapshots/L2CS-gaze360-_loader-180-4/_epoch_55.pkl', type=str, required=True)
+        default='weights/L2CSNet_gaze360.pkl', type=str)
     parser.add_argument(
         '--cam', dest='cam_id', help='Camera device id to use [0]',
-        default=0, type=int, required=True)
+        default=0, type=int)
     parser.add_argument(
         '--arch', dest='arch', help='Network architecture, can be: ResNet18, ResNet34, ResNet50, ResNet101, ResNet152',
         default='ResNet50', type=str)
 
-    parser.add_argument('--calib_painting_path', dest='cal_painting_path', help='Path of the folder of painting '
-                                                                                'calibration [Example: C:/.../calibration/venere]',
-                        type=str, required=True)
+    parser.add_argument('--calib_painting_path', dest='cal_painting_path',
+                        help='Path of the folder of painting calibration [Example: C:/.../calibration/venere]', default='calibration/paintingA', type=str)
 
-    parser.add_argument('--painting_name', dest='paint_name', help='Insert the name of the painting',
-                        type=str, required=True)
+    parser.add_argument('--painting_name', dest='paint_name', help='Insert the name of the painting', default='paintingA',
+                        type=str)
 
     args = parser.parse_args()
     return args
@@ -301,7 +307,6 @@ def getInfoPerPainting(result):
     age_interval_5_array_total = [0] * len(painting_names)
     age_interval_6_array_total = [0] * len(painting_names)
     age_interval_7_array_total = [0] * len(painting_names)
-
 
     for row in range(len(result)):
         painting_name = result[row][PAINTING_NAME_COLUMN]
@@ -347,12 +352,13 @@ def getInfoPerPainting(result):
         elif age_interval == AGE_INTERVALS[7]:
             age_interval_7_array_total[painting_index] += 1
         else:
-            print(f"Something went wrong while trying to classify the age intervals in row {row}")
+            print(
+                f"Something went wrong while trying to classify the age intervals in row {row}")
 
     # AGE_INTERVALS = ['(0, 2)', '(4, 6)', '(8, 12)', '(15, 20)', '(25, 32)', '(38, 43)', '(48, 53)', '(60, 100)']
 
-    return total_seconds_array_male, total_seconds_array_female, total_seconds_array, single_interactions_array_male,\
-           single_interactions_array_female, single_interactions_array_total, age_interval_0_array_total, \
-           age_interval_1_array_total, age_interval_2_array_total, age_interval_3_array_total, \
-           age_interval_4_array_total, age_interval_5_array_total, age_interval_6_array_total, \
-           age_interval_7_array_total
+    return total_seconds_array_male, total_seconds_array_female, total_seconds_array, single_interactions_array_male, \
+        single_interactions_array_female, single_interactions_array_total, age_interval_0_array_total, \
+        age_interval_1_array_total, age_interval_2_array_total, age_interval_3_array_total, \
+        age_interval_4_array_total, age_interval_5_array_total, age_interval_6_array_total, \
+        age_interval_7_array_total
